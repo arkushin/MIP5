@@ -2,10 +2,12 @@ from skimage import transform as tf
 from skimage.feature import (match_descriptors, ORB, plot_matches)
 import matplotlib.pyplot as plt
 import cv2
-from skimage.filters.rank import enhance_contrast
+from skimage.filters.rank import enhance_contrast, median
+from skimage.exposure import equalize_adapthist
 from skimage import morphology
-from skimage.measure import ransac as skransac
-from skimage.transform import EuclideanTransform
+
+# from skimage.measure import ransac as skransac
+# from skimage.transform import EuclideanTransform
 import numpy as np
 from ex4_part1 import *
 from scipy import misc
@@ -19,17 +21,16 @@ from scipy import misc
 
 
 img1 = cv2.imread('BL01-no.tif', 0)
-img1 = cv2.medianBlur(img1, 15)
-img1 = enhance_contrast(img1, morphology.square(10))
-img1 = img1 / img1.max(axis=0)
+
+img1 = median(img1, selem=np.ones((12, 12)))
+
 
 img2 = cv2.imread('FU01-no.tif', 0)
-img2 = cv2.medianBlur(img2, 15)
-img2 = enhance_contrast(img2, morphology.square(10))
-img2 = img2 / img2.max(axis=0)
+img2 = median(img2, selem=np.ones((12, 12)))
 
 
-descriptor_extractor = ORB(n_keypoints=200, harris_k=0.00001)
+
+descriptor_extractor = ORB(n_keypoints=200, harris_k=1e-4)
 
 descriptor_extractor.detect_and_extract(img1)
 keypoints1 = descriptor_extractor.keypoints
@@ -39,7 +40,7 @@ descriptor_extractor.detect_and_extract(img2)
 keypoints2 = descriptor_extractor.keypoints
 descriptors2 = descriptor_extractor.descriptors
 
-matches12 = match_descriptors(descriptors1, descriptors2, cross_check=True)
+matches12 = match_descriptors(descriptors1, descriptors2, cross_check=True,metric='euclidean')
 
 display_matches(img1, img2, keypoints1[matches12[:, 0]], keypoints2[matches12[:, 1]])
 
